@@ -52,13 +52,14 @@ void SoundProcessor::run() {
     mapping["mute"] = CVT_MUTE;
     mapping["mix"] = CVT_MIX;
     mapping["reverse"] = CVT_REVERSE;
+    mapping["volume"] = CVT_VOLUME;
     for(const ConfigTuple& tuple : parsed) {
         std::string cvtName;
         std::vector<std::string> args;
         std::tie(cvtName, args) = tuple;
         switch (mapping[cvtName]) {
-            case CVT_MUTE:
-                if(args.size() != 3) {
+            case CVT_MUTE: {
+                if (args.size() != 3) {
                     throw std::runtime_error("Wrong number of arguments for mute converter");
                 }
                 int start, end;
@@ -67,6 +68,57 @@ void SoundProcessor::run() {
                 Converters::MuteConverter cvt(&currentProduct, start, end);
                 cvt.convert();
                 break;
+            }
+            case CVT_REVERSE: {
+                if (args.size() != 1 and args.size() != 3) {
+                    throw std::runtime_error("Wrong number of arguments for reverse converter");
+                } else if (args.size() == 1) {
+                    Converters::ReverseConverter cvt(&currentProduct);
+                    cvt.convert();
+                } else {
+                    int start, end;
+                    start = std::stoi(args[1]);
+                    end = std::stoi(args[2]);
+                    Converters::ReverseConverter cvt(&currentProduct, start, end);
+                    cvt.convert();
+                }
+                break;
+            }
+            case CVT_VOLUME: {
+                if (args.size() != 2 and args.size() != 4) {
+                    throw std::runtime_error("Wrong number of arguments for volume converter");
+                } else if (args.size() == 2) {
+                    float factor = std::stof(args[1]);
+                    Converters::VolumeConverter cvt(&currentProduct, factor);
+                    cvt.convert();
+                } else {
+                    int start, end;
+                    float factor = std::stof(args[1]);
+                    start = std::stoi(args[2]);
+                    end = std::stoi(args[3]);
+                    Converters::VolumeConverter cvt(&currentProduct, factor, start, end);
+                    cvt.convert();
+                }
+                break;
+            }
+            case CVT_MIX: {
+                if (args.size() != 2 and args.size() != 3) {
+                    throw std::runtime_error("Wrong number of arguments for mix converter");
+                } else if (args.size() == 2) {
+                    int toMixWith = stoi(args[1].substr(1));
+                    std::string fileName = input_file_name;
+                    if(toMixWith >= 2) fileName = other_input_names[toMixWith-2];
+                    Converters::MixConverter cvt(&currentProduct, fileName);
+                    cvt.convert();
+                } else {
+                    int toMixWith = stoi(args[1].substr(1));
+                    std::string fileName = input_file_name;
+                    if(toMixWith >= 2) fileName = other_input_names[toMixWith-2];
+                    int time = std::stoi(args[2]);
+                    Converters::MixConverter cvt(&currentProduct, fileName, time);
+                    cvt.convert();
+                }
+            }
         }
     }
     WAVWriter wavWriter(output_file_name);

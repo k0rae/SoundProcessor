@@ -1,2 +1,2 @@
-mute 0 5
-mute 8 10
+volume 0 5 7
+volume 0.1 7 9

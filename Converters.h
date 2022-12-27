@@ -4,7 +4,7 @@
 #define CVT_MUTE 0
 #define CVT_MIX 1
 #define CVT_REVERSE 2
-
+#define CVT_VOLUME 3
 
 typedef std::vector<short int> SamplesProduct;
 
@@ -31,7 +31,19 @@ namespace Converters {
         void convert() override;
     private:
         SamplesProduct* input;
+        std::string fileName;
         int time;
+    };
+
+    class VolumeConverter: public BaseConverter {
+    public:
+        VolumeConverter(SamplesProduct* input, float factor, int start, int end);
+        VolumeConverter(SamplesProduct* input, float factor);
+        void convert() override;
+    private:
+        SamplesProduct* input;
+        float factor;
+        int start, end;
     };
 
     class ReverseConverter: public BaseConverter {
