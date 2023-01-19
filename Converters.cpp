@@ -1,42 +1,24 @@
 #include "Converters.h"
 #include "WAVParser.h"
+#include "SoundProcessor.h"
 #include <algorithm>
-#include <climits>
 #include <iostream>
-#include <utility>
 
-template <typename T>
-T swap_endian(T u)
-{
-    static_assert (CHAR_BIT == 8, "CHAR_BIT != 8");
-
-    union
-    {
-        T u;
-        unsigned char u8[sizeof(T)];
-    } source, dest;
-
-    source.u = u;
-
-    for (size_t k = 0; k < sizeof(T); k++)
-        dest.u8[k] = source.u8[sizeof(T) - k - 1];
-
-    return dest.u;
-}
-
-Converters::MuteConverter::MuteConverter(SamplesProduct *input, int start, int end): input(input), start(start), end(end) {}
-
-void Converters::MuteConverter::convert() {
+void Converters::MuteConverter::convert(SamplesProduct* input) {
     for(unsigned long long i = start * SAMPLES_IN_SECOND; i < std::min(input->size(), (unsigned long long)end * SAMPLES_IN_SECOND); i++) {
         (*input)[i] = 0;
     }
 }
 
-Converters::MixConverter::MixConverter(SamplesProduct *input, std::string fileName, int time): input(input), fileName(std::move(fileName)), time(0) {}
+Converters::MuteConverter::MuteConverter(std::vector<std::string> args) {
+    if (args.size() != 3) {
+        throw std::runtime_error("Wrong number of arguments for mute converter");
+    }
+    start = std::stoi(args[1]);
+    end = std::stoi(args[2]);
+}
 
-Converters::MixConverter::MixConverter(SamplesProduct *input, std::string fileName): input(input), fileName(std::move(fileName)), time(0) {}
-
-void Converters::MixConverter::convert() {
+void Converters::MixConverter::convert(SamplesProduct* input) {
     WAVParser parser(fileName);
     std::vector<short int> toMixWith = parser.parse();
     int j = 0;
@@ -45,21 +27,18 @@ void Converters::MixConverter::convert() {
     }
 }
 
-Converters::ReverseConverter::ReverseConverter(SamplesProduct *input, int start, int end): input(input), start(start), end(end){}
-
-Converters::ReverseConverter::ReverseConverter(SamplesProduct *input): input(input), start(-1), end(-1) {}
-
-void Converters::ReverseConverter::convert() {      // ?????????????????
-    if(start == -1) {
-        std::reverse(input->begin(), input->end());
+Converters::MixConverter::MixConverter(std::vector<std::string> args) {
+    if (args.size() != 2 and args.size() != 3) {
+        throw std::runtime_error("Wrong number of arguments for mix converter");
+    } else if (args.size() == 2) {
+        time = 0;
+    } else {
+        time = std::stoi(args[2]);
     }
+    fileName = SoundProcessor::other_input_names[stoi(args[1].substr(1))];
 }
 
-Converters::VolumeConverter::VolumeConverter(SamplesProduct *input, float factor, int start, int end): input(input), factor(factor), start(start), end(end){}
-
-Converters::VolumeConverter::VolumeConverter(SamplesProduct *input, float factor): input(input), factor(factor), start(-1), end(-1) {}
-
-void Converters::VolumeConverter::convert() {
+void Converters::VolumeConverter::convert(SamplesProduct* input) {
     if(start == -1) {
         for(short int& sample : *input) {
             sample *= factor;
@@ -68,5 +47,17 @@ void Converters::VolumeConverter::convert() {
         for(unsigned long long i = start * SAMPLES_IN_SECOND; i < std::min(input->size(), (unsigned long long)end * SAMPLES_IN_SECOND); i++) {
             (*input)[i] = (*input)[i] * factor;
         }
+    }
+}
+
+Converters::VolumeConverter::VolumeConverter(std::vector<std::string> args) {
+    if (args.size() != 2 and args.size() != 4) {
+        throw std::runtime_error("Wrong number of arguments for volume converter");
+    } else if (args.size() == 2) {
+        factor = std::stof(args[1]);
+    } else {
+        factor = std::stof(args[1]);
+        start = std::stoi(args[2]);
+        end = std::stoi(args[3]);
     }
 }
