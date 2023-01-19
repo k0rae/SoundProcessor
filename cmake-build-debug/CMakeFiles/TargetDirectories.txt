@@ -1,3 +1,0 @@
-D:/work/c++/SndPrcssr/cmake-build-debug/CMakeFiles/SoundProcessor.dir
-D:/work/c++/SndPrcssr/cmake-build-debug/CMakeFiles/edit_cache.dir
-D:/work/c++/SndPrcssr/cmake-build-debug/CMakeFiles/rebuild_cache.dir
